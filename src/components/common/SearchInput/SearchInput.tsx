@@ -1,0 +1,1 @@
+export function SearchInput({value,onChange}:{value:string;onChange:(value:string)=>void}){return <input className="search-input" value={value} onChange={e=>onChange(e.target.value)} placeholder="Tìm kiếm..." aria-label="Tìm kiếm"/>}

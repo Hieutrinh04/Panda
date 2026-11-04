@@ -1,0 +1,20 @@
+from datetime import date, datetime
+from decimal import Decimal
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Numeric, String, Text, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from .core.database import Base
+
+class User(Base):
+    __tablename__='users'; id:Mapped[int]=mapped_column(primary_key=True); full_name:Mapped[str]=mapped_column(String(120)); username:Mapped[str]=mapped_column(String(80),unique=True,index=True); phone:Mapped[str|None]=mapped_column(String(30),nullable=True); password_hash:Mapped[str]=mapped_column(String(255)); role:Mapped[str]=mapped_column(String(20),default='staff'); is_active:Mapped[bool]=mapped_column(Boolean,default=True); created_at:Mapped[datetime]=mapped_column(DateTime,server_default=func.now())
+
+class Customer(Base):
+    __tablename__='customers'; id:Mapped[int]=mapped_column(primary_key=True); name:Mapped[str]=mapped_column(String(120)); gender:Mapped[str|None]=mapped_column(String(20),nullable=True); birth_date:Mapped[date|None]=mapped_column(Date,nullable=True); phone:Mapped[str|None]=mapped_column(String(30),nullable=True,index=True); address:Mapped[str|None]=mapped_column(String(255),nullable=True); username:Mapped[str|None]=mapped_column(String(80),nullable=True); password_hash:Mapped[str|None]=mapped_column(String(255),nullable=True); created_at:Mapped[datetime]=mapped_column(DateTime,server_default=func.now())
+
+class Product(Base):
+    __tablename__='products'; id:Mapped[int]=mapped_column(primary_key=True); name:Mapped[str]=mapped_column(String(160),index=True); category_name:Mapped[str]=mapped_column(String(80)); color:Mapped[str|None]=mapped_column(String(40),nullable=True); size:Mapped[str|None]=mapped_column(String(20),nullable=True); quantity:Mapped[int]=mapped_column(default=0); sale_price:Mapped[Decimal]=mapped_column(Numeric(14,2),default=0); rental_price:Mapped[Decimal|None]=mapped_column(Numeric(14,2),nullable=True); deposit:Mapped[Decimal|None]=mapped_column(Numeric(14,2),nullable=True); product_type:Mapped[str]=mapped_column(String(20),index=True); status:Mapped[str]=mapped_column(String(30),default='available'); image_url:Mapped[str|None]=mapped_column(Text,nullable=True); created_at:Mapped[datetime]=mapped_column(DateTime,server_default=func.now()); updated_at:Mapped[datetime]=mapped_column(DateTime,server_default=func.now(),onupdate=func.now())
+
+class Order(Base):
+    __tablename__='orders'; id:Mapped[int]=mapped_column(primary_key=True); order_code:Mapped[str]=mapped_column(String(30),unique=True,index=True); customer_id:Mapped[int|None]=mapped_column(ForeignKey('customers.id'),nullable=True); product_id:Mapped[int]=mapped_column(ForeignKey('products.id')); product_name_snapshot:Mapped[str]=mapped_column(String(160)); order_type:Mapped[str]=mapped_column(String(20),index=True); color:Mapped[str|None]=mapped_column(String(40),nullable=True); size:Mapped[str|None]=mapped_column(String(20),nullable=True); quantity:Mapped[int]=mapped_column(default=1); phone_snapshot:Mapped[str|None]=mapped_column(String(30),nullable=True); address_snapshot:Mapped[str|None]=mapped_column(String(255),nullable=True); sale_amount:Mapped[Decimal]=mapped_column(Numeric(14,2),default=0); rental_amount:Mapped[Decimal|None]=mapped_column(Numeric(14,2),nullable=True); deposit_amount:Mapped[Decimal|None]=mapped_column(Numeric(14,2),nullable=True); status:Mapped[str]=mapped_column(String(30),default='preparing'); rental_due_date:Mapped[date|None]=mapped_column(Date,nullable=True); returned_at:Mapped[datetime|None]=mapped_column(DateTime,nullable=True); created_at:Mapped[datetime]=mapped_column(DateTime,server_default=func.now()); customer:Mapped[Customer|None]=relationship(); product:Mapped[Product]=relationship()
+
+class Transaction(Base):
+    __tablename__='transactions'; id:Mapped[int]=mapped_column(primary_key=True); order_id:Mapped[int]=mapped_column(ForeignKey('orders.id')); type:Mapped[str]=mapped_column(String(30)); amount:Mapped[Decimal]=mapped_column(Numeric(14,2)); note:Mapped[str|None]=mapped_column(Text,nullable=True); created_at:Mapped[datetime]=mapped_column(DateTime,server_default=func.now())

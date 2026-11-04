@@ -1,0 +1,25 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: panda_fashion
+      MYSQL_USER: panda
+      MYSQL_PASSWORD: panda
+      MYSQL_ROOT_PASSWORD: root
+    ports: ["3307:3306"]
+    volumes: [panda_mysql:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    ports: ["8000:8000"]
+volumes:
+  panda_mysql:

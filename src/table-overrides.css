@@ -1,0 +1,12 @@
+.table{width:100%;}
+.table-head,.table-row{grid-template-columns:72px minmax(150px,1.5fr) repeat(5,minmax(115px,1fr)) 125px;column-gap:28px;text-align:center;}
+.table-cols-6 .table-head,.table-cols-6 .table-row{grid-template-columns:72px minmax(150px,1.5fr) repeat(5,minmax(115px,1fr)) 125px;column-gap:28px;}
+.table-head span,.table-row span{display:flex;align-items:center;justify-content:center;min-width:0;}
+.table-row .thumb{justify-self:center;}
+.table-row .muted{justify-self:center;white-space:nowrap;}
+.table-head{padding-top:16px;padding-bottom:16px;}
+.table-row{min-height:86px;padding-top:16px;padding-bottom:16px;}
+.table-row span:nth-child(2){justify-content:flex-start;text-align:left;}
+@media(max-width:900px){.table-head,.table-row{column-gap:16px;}}
+h1,h2,h3,.chart h2,.report-summary strong{letter-spacing:normal!important;word-spacing:normal!important;font-kerning:normal;}
+h1,h2,h3,.chart h2,.report-summary strong,.panel h2{font-family:Arial,"Segoe UI",sans-serif!important;letter-spacing:0!important;word-spacing:0!important;}

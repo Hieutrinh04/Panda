@@ -1,0 +1,1 @@
+export function EmptyState({message='Chưa có dữ liệu'}:{message?:string}){return <div className="empty-state"><strong>{message}</strong><span>Dữ liệu sẽ xuất hiện ở đây khi có phát sinh.</span></div>}
