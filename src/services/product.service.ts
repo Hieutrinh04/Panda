@@ -1,5 +1,0 @@
-import { api } from './apiClient'
-import type { Product } from '../types/product'
-type ApiProduct={id:number;name:string;category_name:string;color?:string;size?:string;gender?:'Nam'|'Nữ'|'Unisex';quantity:number;sale_price:string;rental_price?:string;deposit?:string;image_url?:string;status:string}
-const map=(p:ApiProduct)=>({id:String(p.id),name:p.name,category:p.category_name,color:p.color||'',size:p.size||'',gender:p.gender||'Unisex',quantity:p.quantity,salePrice:p.sale_price,rentalPrice:p.rental_price,deposit:p.deposit,imageUrl:p.image_url,status:p.status==='available'?'Đang bán':p.status} as Product)
-export const productService={list:async(type:'sale'|'rental')=>{const items=await api<ApiProduct[]>(`/products?type=${type}`);return items.map(map)},create:async(data:Record<string,unknown>)=>map(await api<ApiProduct>('/products',{method:'POST',body:JSON.stringify(data)})),update:async(id:string,data:Record<string,unknown>)=>map(await api<ApiProduct>(`/products/${id}`,{method:'PATCH',body:JSON.stringify(data)})),remove:(id:string)=>api<void>(`/products/${id}`,{method:'DELETE'})}

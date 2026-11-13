@@ -1,2 +1,0 @@
-import { MockListPage } from '../shared/MockListPage'
-export function ReportPage({rows,total,count}:{rows:string[][];total:number;count:number}){return <><div className="report-summary"><div><strong>{total.toLocaleString('vi-VN')}đ</strong><span>Doanh thu trong ngày</span></div><div><strong>{count}</strong><span>Giao dịch</span></div></div><MockListPage headers={['Mã giao dịch','Loại','Số tiền','Ngày tạo']} rows={rows} buttonLabel="Xuất báo cáo"/></>}
