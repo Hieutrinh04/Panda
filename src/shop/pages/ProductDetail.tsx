@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Heart, Minus, Plus } from 'lucide-react'
 import { useDb } from '../../data/store'
@@ -9,7 +9,8 @@ import { productArt } from '../../lib/art'
 import { addDays, date, money, rentalDays, today } from '../../lib/format'
 import { Empty, Stars } from '../../components/ui'
 import { useAction } from '../../components/feedback'
-import { ProductCard } from '../ProductCard'
+import { RecommendationSection } from '../Recommendations'
+import { alsoChosen, recordView, similarProducts } from '../../services/recommend'
 
 const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'Free size']
 
@@ -36,6 +37,12 @@ function ProductView({ id }: { id?: string }) {
   const [quantity, setQuantity] = useState(1)
   const [imageIndex, setImageIndex] = useState(0)
 
+  // Ghi lại sản phẩm đã xem để hệ gợi ý hiểu sở thích (lưu trên trình duyệt).
+  const productId = product?.id
+  useEffect(() => {
+    if (productId) recordView(productId)
+  }, [productId])
+
   if (!product) return <div className="container"><Empty title="Sản phẩm không tồn tại hoặc đã ngừng kinh doanh"><Link to="/san-pham" className="btn">Xem sản phẩm khác</Link></Empty></div>
 
   const sizes = variants.filter((v) => v.color === color).sort((a, b) => SIZE_ORDER.indexOf(a.size) - SIZE_ORDER.indexOf(b.size))
@@ -48,7 +55,8 @@ function ProductView({ id }: { id?: string }) {
   const rating = productRating(db, product.id)
   const reviews = db.reviews.filter((r) => r.productId === product.id && !r.hidden)
   const fav = customer ? (db.wishlists[customer.id] ?? []).includes(product.id) : false
-  const related = db.products.filter((p) => p.status === 'active' && p.id !== product.id && (p.categoryId === product.categoryId || p.collectionId === product.collectionId)).slice(0, 4)
+  const similar = similarProducts(db, product.id, 4)
+  const together = alsoChosen(db, product.id, 4).filter((r) => !similar.some((s) => s.product.id === r.product.id))
 
   const add = async (goTo?: string) => {
     if (!customer) return navigate('/dang-nhap', { state: { from: `/san-pham/${product.id}` } })
@@ -190,12 +198,9 @@ function ProductView({ id }: { id?: string }) {
         ) : <Empty title="Chưa có đánh giá"><span>Khách đã mua/thuê có thể đánh giá sau khi hoàn tất đơn.</span></Empty>}
       </section>
 
-      {related.length > 0 && (
-        <section className="section" style={{ paddingBottom: 60 }}>
-          <div className="section-head"><div><small>GỢI Ý</small><h2>Có thể bạn cũng thích</h2></div></div>
-          <div className="product-grid">{related.map((p) => <ProductCard key={p.id} product={p} />)}</div>
-        </section>
-      )}
+      <RecommendationSection eyebrow="KHÁCH CŨNG CHỌN" title={`Khách ${canRent(product) && !canSell(product) ? 'thuê' : 'mua'} mẫu này cũng chọn`} items={together} />
+      <RecommendationSection eyebrow="GỢI Ý" title="Sản phẩm tương tự" items={similar} />
+      <div style={{ paddingBottom: 60 }} />
     </div>
   )
 }

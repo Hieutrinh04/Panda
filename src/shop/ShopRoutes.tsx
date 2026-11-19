@@ -5,6 +5,7 @@ import { Catalog } from './pages/Catalog'
 import { ProductDetail } from './pages/ProductDetail'
 import { Cart } from './pages/Cart'
 import { Checkout } from './pages/Checkout'
+import { PaymentResult } from './pages/PaymentResult'
 import { Login, Register, ForgotPassword, ResetPassword } from './pages/Auth'
 import { About } from './pages/About'
 import { AccountLayout } from './account/AccountLayout'
@@ -22,6 +23,7 @@ export function ShopRoutes() {
         <Route path="san-pham/:id" element={<ProductDetail />} />
         <Route path="gio-hang" element={<Cart />} />
         <Route path="thanh-toan" element={<Checkout />} />
+        <Route path="thanh-toan/ket-qua" element={<PaymentResult />} />
         <Route path="dang-nhap" element={<Login />} />
         <Route path="dang-ky" element={<Register />} />
         <Route path="quen-mat-khau" element={<ForgotPassword />} />

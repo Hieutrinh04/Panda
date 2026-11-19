@@ -1,25 +1,32 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import type { DeliveryMethod, PaymentMethod } from '../../types'
+import type { DeliveryMethod, Order, PaymentMethod } from '../../types'
 import { useDb } from '../../data/store'
 import { useCustomer } from '../../services/auth'
 import { cartLines, placeOrders, quote } from '../../services/orders'
 import { saveAddress } from '../../services/people'
 import { date, money } from '../../lib/format'
 import { Field, Modal } from '../../components/ui'
-import { useAction } from '../../components/feedback'
+import { useAction, useFeedback } from '../../components/feedback'
+import { startVnpayPayment, vnpayAvailable } from '../../services/payments'
+import { errorMessage } from '../../services/core'
 
-const PAYMENTS: { value: PaymentMethod; label: string; hint: string }[] = [
-  { value: 'cod', label: 'Thanh toán khi nhận hàng', hint: 'Trả tiền mặt cho nhân viên giao hàng hoặc tại cửa hàng' },
-  { value: 'bank', label: 'Chuyển khoản ngân hàng', hint: 'Quét mã QR, xác nhận tự động (giả lập)' },
-  { value: 'card', label: 'Thẻ / ví điện tử', hint: 'Visa, Mastercard, MoMo, ZaloPay (giả lập)' },
-]
+const COD = { value: 'cod' as const, label: 'Thanh toán khi nhận hàng', hint: 'Trả tiền mặt cho nhân viên giao hàng hoặc tại cửa hàng' }
+// Khi kết nối Supabase: thanh toán qua cổng VNPay (sandbox). Chế độ cục bộ: cổng giả lập.
+const PAYMENTS: { value: PaymentMethod; label: string; hint: string }[] = vnpayAvailable
+  ? [COD, { value: 'vnpay', label: 'Thanh toán qua VNPay', hint: 'Thẻ ATM nội địa, QR ngân hàng, thẻ quốc tế (môi trường thử nghiệm)' }]
+  : [
+      COD,
+      { value: 'bank', label: 'Chuyển khoản ngân hàng', hint: 'Quét mã QR, xác nhận tự động (giả lập)' },
+      { value: 'card', label: 'Thẻ / ví điện tử', hint: 'Visa, Mastercard, MoMo, ZaloPay (giả lập)' },
+    ]
 
 export function Checkout() {
   const db = useDb()
   const customer = useCustomer()
   const navigate = useNavigate()
   const run = useAction()
+  const { toast } = useFeedback()
   const defaultAddress = customer?.addresses.find((a) => a.isDefault) ?? customer?.addresses[0]
   const [addressId, setAddressId] = useState(defaultAddress?.id ?? 'new')
   const [receiver, setReceiver] = useState({ name: customer?.fullName ?? '', phone: customer?.phone ?? '', line: '', save: true })
@@ -43,19 +50,32 @@ export function Checkout() {
   const place = async () => {
     setPaying(false)
     setPlacing(true)
+    let created: Order[] = []
     const ok = await run(() => {
       if (delivery === 'delivery' && addressId === 'new' && receiver.save)
         saveAddress(customer.id, { label: 'Địa chỉ mới', receiver: receiver.name, phone: receiver.phone, line: receiver.line, isDefault: customer.addresses.length === 0 })
-      const orders = placeOrders({
+      created = placeOrders({
         lines, couponCode: coupon, pointsUsed: q.pointsUsed, deliveryMethod: delivery, customer,
         customerName: address && delivery === 'delivery' ? address.receiver : receiver.name,
         phone: address && delivery === 'delivery' ? address.phone : receiver.phone,
         address: address && addressId !== 'new' ? address.line : receiver.line,
         paymentMethod: payment, channel: 'online', note, clearCart: true,
       })
-      navigate(`/tai-khoan/don-hang/${orders[0].id}`, { state: { placed: orders.map((o) => o.code) } })
-    }, 'Đặt hàng thành công!')
-    if (!ok) setPlacing(false)
+      if (payment !== 'vnpay') navigate(`/tai-khoan/don-hang/${created[0].id}`, { state: { placed: created.map((o) => o.code) } })
+    }, payment === 'vnpay' ? undefined : 'Đặt hàng thành công!')
+    if (!ok) {
+      setPlacing(false)
+      return ok
+    }
+    if (payment === 'vnpay') {
+      // Đơn đã lưu trên máy chủ: xin link và chuyển sang trang thanh toán của VNPay.
+      try {
+        window.location.assign(await startVnpayPayment(created.map((o) => o.id)))
+      } catch (error) {
+        toast(`Đã đặt hàng nhưng chưa mở được VNPay: ${errorMessage(error)} Bạn có thể thanh toán lại trong trang đơn hàng.`, true)
+        navigate(`/tai-khoan/don-hang/${created[0].id}`)
+      }
+    }
     return ok
   }
 
@@ -138,7 +158,7 @@ export function Checkout() {
             {q.deposit > 0 && <div className="summary-row"><span className="muted">Tiền cọc</span><span>{money(q.deposit)}</span></div>}
             <div className="summary-row total"><span>Tổng thanh toán</span><span>{money(q.total)}</span></div>
           </div>
-          <button className="btn btn-primary btn-lg btn-block" onClick={() => (payment === 'cod' ? void place() : setPaying(true))}>Đặt hàng</button>
+          <button className="btn btn-primary btn-lg btn-block" onClick={() => (payment === 'cod' || payment === 'vnpay' ? void place() : setPaying(true))} disabled={placing}>{payment === 'vnpay' ? 'Đặt hàng và thanh toán' : 'Đặt hàng'}</button>
           <p className="muted small">Bạn sẽ nhận được thông báo khi đơn được xác nhận và cập nhật trạng thái.</p>
         </aside>
       </div>

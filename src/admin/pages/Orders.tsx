@@ -4,7 +4,7 @@ import { Printer, Repeat } from 'lucide-react'
 import type { Order, OrderStatus, OrderType, PaymentMethod, PaymentType, RequestType } from '../../types'
 import { useDb } from '../../data/store'
 import { useAdminUser } from '../../services/auth'
-import { advanceOrder, assignOrder, createRequest, displayStatus, isOverdue, lateFeeFor, nextSteps, paidAmount, recordPayment, requestEligibility } from '../../services/orders'
+import { advanceOrder, assignOrder, awaitingOnlinePayment, createRequest, displayStatus, isOverdue, lateFeeFor, nextSteps, paidAmount, recordPayment, requestEligibility } from '../../services/orders'
 import { printInvoice } from '../../lib/invoice'
 import { PAYMENT_METHOD_LABEL, PAYMENT_TYPE_LABEL, REQUEST_STATUS_LABEL, REQUEST_TYPE_LABEL, STATUS_LABEL } from '../../services/labels'
 import { date, dateTime, matches, money, rentalDays, today } from '../../lib/format'
@@ -177,7 +177,7 @@ export function OrderDrawer({ order, onClose }: { order: Order; onClose: () => v
           <dd>{order.deliveryMethod === 'pickup' ? 'Nhận tại cửa hàng' : order.address}</dd>
           {order.carrier && <><dt>Vận chuyển</dt><dd>{order.carrier}{order.trackingCode && ` · mã ${order.trackingCode}`}</dd></>}
           <dt>Thanh toán</dt>
-          <dd>{PAYMENT_METHOD_LABEL[order.paymentMethod]}</dd>
+          <dd>{PAYMENT_METHOD_LABEL[order.paymentMethod]}{awaitingOnlinePayment(db, order) && <span className="danger-text"> · khách chưa thanh toán</span>}</dd>
           <dt>Kênh</dt>
           <dd>{order.channel === 'store' ? `Tại cửa hàng${order.createdBy ? ` · ${nameOf(order.createdBy)}` : ''}` : 'Đặt online'}</dd>
           {order.note && <><dt>Ghi chú</dt><dd>{order.note}</dd></>}

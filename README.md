@@ -30,7 +30,7 @@ Kiểm thử tự động các luồng nghiệp vụ (đặt hàng, hủy/hoàn 
 npm test
 ```
 
-Dữ liệu mẫu (22 sản phẩm, ~60 biến thể, đơn mua/thuê 4 tuần gần nhất, khách hàng, mã giảm giá…) được tạo lần đầu. Muốn làm lại từ đầu: **Quản trị → Nội dung & cài đặt → Khôi phục dữ liệu mẫu**.
+Dữ liệu mẫu (38 sản phẩm có ảnh chụp thật, 104 biến thể, đơn mua/thuê 4 tuần gần nhất, khách hàng, mã giảm giá…) được tạo lần đầu. Muốn làm lại từ đầu: **Quản trị → Nội dung & cài đặt → Khôi phục dữ liệu mẫu**.
 
 ## Chức năng theo đề cương
 
@@ -45,7 +45,7 @@ Dữ liệu mẫu (22 sản phẩm, ~60 biến thể, đơn mua/thuê 4 tuần g
 ### Khách hàng đã đăng nhập
 - Hồ sơ, ảnh đại diện, đổi mật khẩu, sổ địa chỉ.
 - Danh sách yêu thích; giỏ hàng (thêm/sửa/xóa, chọn biến thể, số lượng, ngày thuê).
-- Đặt hàng: giao tận nơi / nhận tại cửa hàng, mã giảm giá, dùng điểm thưởng, thanh toán COD / chuyển khoản / thẻ (cổng thanh toán giả lập). Giỏ có cả hàng mua và hàng thuê được tách thành 2 đơn.
+- Đặt hàng: giao tận nơi / nhận tại cửa hàng, mã giảm giá, dùng điểm thưởng, thanh toán COD hoặc qua cổng **VNPay sandbox** (khi chạy với Supabase; bản cục bộ dùng cổng giả lập). Giỏ có cả hàng mua và hàng thuê được tách thành 2 đơn.
 - Theo dõi trạng thái, mã vận đơn, chi tiết đơn mua/đơn thuê; in hóa đơn; mua lại đơn cũ; yêu cầu hủy, đổi trả, hoàn tiền, gia hạn thuê.
 - Theo dõi tiền cọc, hạn trả, phí phát sinh; lịch sử thanh toán, hoàn tiền, hoàn cọc.
 - Đánh giá sản phẩm sau khi đơn hoàn tất; nhận thông báo (đơn hàng, nhắc hạn trả, khuyến mãi); gửi góp ý/khiếu nại/hỗ trợ.

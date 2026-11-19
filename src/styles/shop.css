@@ -231,3 +231,7 @@
   .shop-footer .grid { grid-template-columns: 1fr; }
 }
 .hide-sm{}@media (max-width:560px){.hide-sm{display:none}}
+
+/* Gợi ý sản phẩm: lý do gợi ý dưới mỗi thẻ */
+.reco-item { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.reco-reason { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted, #6b6f76); }

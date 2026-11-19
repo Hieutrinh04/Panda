@@ -187,16 +187,60 @@ Một script đọc `src/data/seed.ts` và ghi danh mục, sản phẩm, biến 
 
 Chạy [`supabase/realtime.sql`](../supabase/realtime.sql) trong SQL Editor. Sau đó, khi khách đặt đơn hay nhân viên đổi trạng thái, các màn hình đang mở tự tải lại sau khoảng 1 giây. Supabase vẫn áp dụng phân quyền: mỗi người chỉ nhận thay đổi của dữ liệu mình được xem. Chưa chạy file này thì ứng dụng vẫn dùng được, chỉ cập nhật khi bạn quay lại tab.
 
-### C2. Trợ lý AI dùng Claude (Edge Function `assistant`)
+### C2. Trợ lý AI dùng Google Gemini (Edge Function `assistant`)
 
-Mã nằm ở [`supabase/functions/assistant/index.ts`](../supabase/functions/assistant/index.ts). Trình duyệt gửi câu hỏi kèm dữ liệu người dùng được phép xem; function gọi Claude (`claude-opus-5-5`, effort `low`) và trả về câu trả lời có cấu trúc: lời đáp, sản phẩm gợi ý, liên kết, bảng số liệu. Trợ lý quản trị kiểm tra tài khoản là nhân viên/quản lý trước khi trả lời.
+Mã nằm ở [`supabase/functions/assistant/index.ts`](../supabase/functions/assistant/index.ts). Trình duyệt gửi câu hỏi kèm dữ liệu người dùng được phép xem; function gọi Google Gemini (mặc định `gemini-3.8-flash`, tự chuyển sang `gemini-2.5-flash` rồi `gemini-2.5-flash-lite` nếu tên mô hình không tồn tại hoặc đang quá tải; đổi được bằng secret `GEMINI_MODEL`) và trả về câu trả lời có cấu trúc: lời đáp, sản phẩm gợi ý, liên kết, bảng số liệu. Trợ lý quản trị kiểm tra tài khoản là nhân viên/quản lý trước khi trả lời.
 
 Triển khai trên Dashboard:
 
 1. **Edge Functions → Deploy a new function → Via Editor**, đặt tên `assistant`, dán nội dung file `index.ts`, bấm **Deploy**.
 2. Trong cài đặt của function, **tắt "Verify JWT with legacy secret"**. Khóa `sb_publishable_…` không phải JWT nên khách chưa đăng nhập sẽ bị chặn nếu để bật; function tự kiểm tra quyền cho trợ lý quản trị.
-3. **Edge Functions → Secrets → Add new secret**: tên `ANTHROPIC_API_KEY`, giá trị là khóa API của bạn từ console.anthropic.com. Khóa chỉ nằm trên máy chủ Supabase, không đưa vào frontend hay `.env.local`.
+3. **Edge Functions → Secrets → Add new secret**: tên `GEMINI_API_KEY`, giá trị là khóa API tạo ở https://aistudio.google.com/apikey. Tùy chọn: thêm `GEMINI_MODEL` để dùng mô hình khác. Khóa chỉ nằm trên máy chủ Supabase, không đưa vào frontend hay `.env.local`.
 
 Chưa triển khai function hoặc chưa có khóa thì trợ lý tự dùng bộ quy tắc cục bộ như trước. Các câu lệnh nhập liệu ("Thêm sản phẩm …", "Nhập kho …") luôn dùng bộ quy tắc vì cần bản nháp chính xác.
 
 Chi phí: mỗi câu hỏi gửi kèm danh mục sản phẩm (khoảng vài nghìn token). Function chưa giới hạn số lần hỏi theo người dùng; nếu đưa website lên mạng công khai nên thêm giới hạn tần suất.
+
+### C3. Thanh toán VNPay (sandbox)
+
+Khách chọn **Thanh toán qua VNPay** ở trang thanh toán → đơn được tạo ở trạng thái *chờ xác nhận, chưa thanh toán* → trình duyệt chuyển sang cổng VNPay → thanh toán xong VNPay đưa khách về `/thanh-toan/ket-qua`. Khoản thu chỉ được ghi khi Edge Function [`vnpay`](../supabase/functions/vnpay/index.ts) kiểm tra đúng chữ ký `vnp_SecureHash`, nên khách không thể tự đánh dấu đã trả. Đơn VNPay chưa thanh toán không xác nhận được; khách có nút **Thanh toán qua VNPay** trong trang chi tiết đơn để trả lại.
+
+| Phần | Nội dung |
+|---|---|
+| [`supabase/vnpay.sql`](../supabase/vnpay.sql) | Thêm phương thức `vnpay`, bảng `vnpay_transactions`, hàm `vnpay_mark_paid` (chỉ máy chủ gọi được) |
+| Edge Function `vnpay` | `create`: tạo giao dịch và link thanh toán · `verify`: trang kết quả gửi lại tham số VNPay · `GET`: IPN do máy chủ VNPay gọi |
+| `src/services/payments.ts` | Gọi function từ trình duyệt |
+
+Thiết lập:
+
+1. Đăng ký tài khoản merchant thử nghiệm tại https://pay.vnpaytest.vn/dev-registration — email gửi về có **vnp_TmnCode** và **vnp_HashSecret**.
+2. Chạy `supabase/vnpay.sql` trong SQL Editor.
+3. Deploy function `vnpay` (Via Editor), **tắt "Verify JWT with legacy secret"** vì máy chủ VNPay gọi IPN không kèm token.
+4. **Edge Functions → Secrets**: thêm `VNPAY_TMN_CODE` và `VNPAY_HASH_SECRET`.
+5. (Tùy chọn) Trong trang quản trị merchant sandbox, khai báo IPN URL: `https://<project>.supabase.co/functions/v1/vnpay`. Không khai báo thì kết quả vẫn được ghi nhận khi khách quay về trang kết quả.
+
+Thẻ test (ngân hàng NCB): số thẻ `9704198526191432198`, tên `NGUYEN VAN A`, ngày phát hành `07/15`, OTP `123456`.
+
+Hoàn tiền khi hủy đơn đã trả qua VNPay được ghi vào sổ thanh toán; trong sandbox không gọi API hoàn tiền của VNPay.
+
+### C4. Hệ gợi ý và RAG
+
+Chạy [`supabase/ai.sql`](../supabase/ai.sql) trong SQL Editor, rồi deploy lại function `assistant`.
+
+**Hệ gợi ý** ([`src/services/recommend.ts`](../src/services/recommend.ts)) — mô hình lai:
+
+| Thành phần | Cách tính |
+|---|---|
+| Lọc theo nội dung | Vector TF-IDF (tên, danh mục, bộ sưu tập, chất liệu, màu, mô tả; tách từ không dấu + cụm 2 từ), cosine; cộng điểm cùng danh mục, gần mức giá, hợp giới tính |
+| Lọc cộng tác item-item | Ma trận khách × sản phẩm với phản hồi ngầm (mua/thuê 3, yêu thích 2, giỏ 1, đã xem 1), cosine giữa các cột, co theo số khách chung |
+| Kết hợp | α·CF + (1−α)·nội dung, α = n/(n+4) theo số khách đã tương tác (sản phẩm mới dựa vào nội dung) |
+| Đa dạng | Sắp lại bằng MMR để không trùng lặp |
+| Đánh giá | Leave-one-out HitRate@5, so với gợi ý theo độ phổ biến (Quản trị → Nội dung & cài đặt) |
+
+Hiển thị ở: trang chủ (Gợi ý cho bạn / Xu hướng), chi tiết sản phẩm (Khách cũng chọn, Sản phẩm tương tự), giỏ hàng (Gợi ý mua kèm), và trong ngữ cảnh gửi cho trợ lý AI. Hàm `recommendation_stats()` trả thống kê tổng hợp (không có thông tin cá nhân) vì khách chỉ đọc được đơn của mình.
+
+**RAG** — trợ lý không còn gửi toàn bộ danh mục cho mô hình:
+
+1. [`src/services/knowledge.ts`](../src/services/knowledge.ts) chuyển mỗi sản phẩm đang bán và mỗi nhóm chính sách thành một tài liệu.
+2. Function `assistant` (action `index`) nhúng tài liệu bằng `gemini-embedding-001` (768 chiều) vào bảng `kb_documents` (pgvector, chỉ mục HNSW); chỉ nhúng lại tài liệu đổi nội dung. Kho tri thức tự đồng bộ mỗi phiên quản trị, hoặc bấm **Cập nhật kho tri thức AI**.
+3. Khi hỏi: nhúng câu hỏi → `match_documents` lấy 8 sản phẩm + 3 chính sách gần nhất → đưa vào prompt cùng đơn hàng và gợi ý cá nhân của khách → Gemini trả lời; khung chat hiện **Nguồn tham khảo** kèm độ tương đồng.

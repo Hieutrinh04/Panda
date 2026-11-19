@@ -4,7 +4,7 @@ import type {
 } from '../types'
 import { addDays, hashPassword, normalize, toDateInput } from '../lib/format'
 
-export const DB_VERSION = 5
+export const DB_VERSION = 6
 
 // Bộ sinh số ngẫu nhiên cố định để dữ liệu mẫu giống nhau mỗi lần khởi tạo.
 function rng(seed: number) {
@@ -79,21 +79,81 @@ const catalog: SeedProduct[] = [
   ['Váy lụa Champagne', 'cat-vay', undefined, 'sup-2', 'Nữ', 'sale', 1790000, 0, 0, ['S', 'M'], ['Vàng champagne'], 'Lụa satin', false, 'Váy lụa suông, cổ đổ, ánh champagne nhẹ.'],
   ['Hanbok Seoul', 'cat-hoatrang', 'col-festival', 'sup-1', 'Nữ', 'both', 1490000, 270000, 900000, ['S', 'M', 'L'], ['Xanh pastel', 'Hồng'], 'Lụa organza', false, 'Hanbok cách tân màu pastel, áo jeogori ngắn.'],
   ['Kimono Sakura', 'cat-hoatrang', 'col-festival', 'sup-1', 'Unisex', 'sale', 1350000, 0, 0, ['M', 'L'], ['Đỏ'], 'Cotton lụa', false, 'Kimono họa tiết hoa anh đào kèm đai obi.'],
-  ['Túi cầm tay Pearl', 'cat-phukien', 'col-wedding', 'sup-1', 'Nữ', 'sale', 390000, 0, 0, ['Free size'], ['Trắng'], 'Ngọc trai nhân tạo', false, 'Túi clutch đính ngọc trai, có dây xích.'],
-  ['Cà vạt lụa Classic', 'cat-phukien', undefined, 'sup-3', 'Nam', 'sale', 250000, 0, 0, ['Free size'], ['Đen', 'Đỏ đô'], 'Lụa', false, 'Cà vạt bản 7cm, lụa bóng.'],
+  ['Ví cầm tay da Milano', 'cat-phukien', 'col-wedding', 'sup-3', 'Unisex', 'sale', 590000, 0, 0, ['Free size'], ['Nâu sô-cô-la'], 'Da bò thật', false, 'Ví cầm tay dáng phong bì, khóa kéo kim loại, đủ chỗ cho điện thoại và giấy tờ khi dự tiệc.'],
+  ['Cà vạt lụa Classic', 'cat-phukien', undefined, 'sup-3', 'Nam', 'sale', 250000, 0, 0, ['Free size'], ['Xanh navy', 'Tím họa tiết'], 'Lụa', false, 'Cà vạt bản 7cm, lụa dệt họa tiết nhỏ, hợp vest tối màu.'],
   ['Đầm dạ hội Ruby', 'cat-datiec', 'col-wedding', 'sup-1', 'Nữ', 'rental', 0, 300000, 1000000, ['S', 'M', 'L'], ['Đỏ ruby'], 'Satin', true, 'Đầm đuôi cá ôm dáng, xẻ tà, phù hợp tiệc tối.'],
   ['Đầm dạ hội Galaxy', 'cat-datiec', 'col-wedding', 'sup-1', 'Nữ', 'rental', 0, 380000, 1500000, ['S', 'M', 'L'], ['Đen ánh kim'], 'Sequin', true, 'Đính sequin lấp lánh như dải ngân hà.'],
   ['Vest nam Tuxedo', 'cat-vest', 'col-wedding', 'sup-3', 'Nam', 'rental', 0, 350000, 1500000, ['M', 'L', 'XL'], ['Đen'], 'Wool', true, 'Tuxedo ve bóng, kèm nơ cổ.'],
   ['Vest nam Champagne', 'cat-vest', 'col-wedding', 'sup-3', 'Nam', 'rental', 0, 320000, 1300000, ['M', 'L'], ['Be'], 'Linen pha', false, 'Vest màu be cho tiệc cưới ngoài trời.'],
-  ['Váy công chúa Elia', 'cat-vay', undefined, 'sup-1', 'Nữ', 'rental', 0, 280000, 900000, ['S', 'M'], ['Xanh nhạt'], 'Tulle', false, 'Váy xòe bồng bềnh nhiều lớp tulle.'],
+  ['Váy công chúa Elia', 'cat-vay', undefined, 'sup-1', 'Nữ', 'rental', 0, 280000, 900000, ['S', 'M'], ['Hồng tím'], 'Tulle', false, 'Váy cúp ngực đính kết, chân váy xòe bồng nhiều lớp tulle, hợp tiệc sinh nhật và chụp ảnh.'],
   ['Váy ren Vintage', 'cat-vay', undefined, 'sup-1', 'Nữ', 'both', 1450000, 260000, 800000, ['S', 'M', 'L'], ['Trắng'], 'Ren', false, 'Váy ren cổ điển tay lỡ.'],
   ['Áo dài cưới An Nhiên', 'cat-aodai', 'col-wedding', 'sup-2', 'Nữ', 'rental', 0, 450000, 1800000, ['S', 'M', 'L'], ['Đỏ'], 'Gấm', true, 'Áo dài cưới gấm đỏ thêu phượng, kèm mấn.'],
-  ['Áo dài cách tân Mộc Lan', 'cat-aodai', 'col-tet', 'sup-2', 'Nữ', 'both', 1150000, 320000, 1200000, ['S', 'M', 'L'], ['Vàng'], 'Tafta', false, 'Áo dài tay bồng cách tân, tà ngắn trẻ trung.'],
+  ['Áo dài Mộc Lan', 'cat-aodai', 'col-tet', 'sup-2', 'Nữ', 'both', 1150000, 320000, 1200000, ['S', 'M', 'L'], ['Trắng'], 'Lụa Hà Đông', false, 'Áo dài trắng lụa mềm, phối khăn choàng đỏ, hợp chụp ảnh kỷ yếu và dạo phố ngày lễ.'],
   ['Kimono Nhật Bản', 'cat-hoatrang', 'col-festival', 'sup-1', 'Unisex', 'rental', 0, 290000, 1000000, ['M', 'L'], ['Xanh đậm'], 'Cotton', false, 'Kimono truyền thống, kèm guốc geta.'],
   ['Hanbok truyền thống', 'cat-hoatrang', 'col-festival', 'sup-1', 'Nữ', 'rental', 0, 270000, 900000, ['S', 'M'], ['Hồng'], 'Lụa', false, 'Hanbok truyền thống chima dài.'],
   ['Mấn và khăn đóng', 'cat-phukien', 'col-tet', 'sup-2', 'Unisex', 'rental', 0, 120000, 300000, ['Free size'], ['Đỏ', 'Vàng'], 'Gấm', false, 'Mấn cô dâu và khăn đóng chú rể.'],
   ['Bộ phụ kiện quý ông', 'cat-phukien', 'col-wedding', 'sup-3', 'Nam', 'rental', 0, 100000, 250000, ['Free size'], ['Đen'], 'Lụa', false, 'Nơ, khăn cài túi, khuy măng sét.'],
+  // Bổ sung theo bộ ảnh chụp thật (PD023 … PD038)
+  ['Đầm dạ hội Scarlet', 'cat-datiec', 'col-wedding', 'sup-1', 'Nữ', 'rental', 0, 350000, 1200000, ['S', 'M', 'L'], ['Đỏ'], 'Satin lụa', true, 'Đầm satin đỏ cổ chữ V, chân váy xòe rộng xẻ tà, chuyển động mềm mại khi bước đi.'],
+  ['Đầm tua rua Gatsby', 'cat-datiec', undefined, 'sup-1', 'Nữ', 'both', 1690000, 300000, 1000000, ['S', 'M'], ['Vàng ánh kim'], 'Sequin tua rua', false, 'Đầm ngắn phong cách thập niên 20, tua rua ánh kim nhiều tầng, hợp tiệc chủ đề và year-end party.'],
+  ['Đầm dạ hội Violet', 'cat-datiec', 'col-wedding', 'sup-1', 'Nữ', 'rental', 0, 380000, 1300000, ['S', 'M', 'L'], ['Tím'], 'Satin, ren đính đá', false, 'Thân trên ren đính đá, chân váy satin tím xẻ cao, dáng chữ A tôn eo.'],
+  ['Đầm dạ hội Emerald', 'cat-datiec', 'col-wedding', 'sup-1', 'Nữ', 'rental', 0, 400000, 1500000, ['S', 'M', 'L'], ['Xanh lục bảo'], 'Tulle kim tuyến', true, 'Đầm xòe hai dây, tulle phủ kim tuyến lấp lánh, phù hợp prom và tiệc cưới buổi tối.'],
+  ['Đầm sequin Ocean', 'cat-datiec', undefined, 'sup-1', 'Nữ', 'rental', 0, 320000, 1200000, ['S', 'M'], ['Xanh dương'], 'Sequin', false, 'Đầm đuôi cá hai dây đính sequin xanh biển, ôm dáng, dành cho tiệc tối và sự kiện.'],
+  ['Vest kẻ sọc Gentleman', 'cat-vest', undefined, 'sup-3', 'Nam', 'both', 2890000, 400000, 1500000, ['M', 'L', 'XL'], ['Xám nhạt kẻ sọc'], 'Wool', true, 'Vest hai hàng khuy, kẻ sọc mảnh, ve nhọn, đi kèm quần cùng màu.'],
+  ['Vest nam Business Grey', 'cat-vest', undefined, 'sup-3', 'Nam', 'sale', 2290000, 0, 0, ['M', 'L', 'XL'], ['Xám'], 'Wool pha', false, 'Vest một hàng khuy dáng regular, màu xám dễ phối, dùng hằng ngày ở công sở.'],
+  ['Vest nam Petrol', 'cat-vest', 'col-wedding', 'sup-3', 'Nam', 'both', 2590000, 350000, 1300000, ['M', 'L'], ['Xanh cổ vịt'], 'Wool', false, 'Vest xanh cổ vịt mặt vải vân chéo, kèm khăn cài túi, nổi bật trong tiệc cưới.'],
+  ['Áo dài cưới Hỷ Phúc', 'cat-aodai', 'col-wedding', 'sup-2', 'Nữ', 'rental', 0, 420000, 1600000, ['S', 'M', 'L'], ['Đỏ'], 'Gấm thêu', true, 'Áo dài cưới gấm đỏ, thêu chữ Hỷ ở ngực, cổ cao, dùng cho lễ ăn hỏi và rước dâu.'],
+  ['Áo dài cưới đôi Song Hỷ', 'cat-aodai', 'col-wedding', 'sup-2', 'Unisex', 'rental', 0, 700000, 2500000, ['Bộ S/M', 'Bộ M/L'], ['Đỏ'], 'Gấm', false, 'Trọn bộ áo dài cô dâu và chú rể cùng tông đỏ, đồng bộ họa tiết, kèm khăn đóng.'],
+  ['Váy cưới ren Bohemian', 'cat-vay', 'col-wedding', 'sup-1', 'Nữ', 'rental', 0, 600000, 3000000, ['S', 'M', 'L'], ['Trắng'], 'Ren, tulle', true, 'Váy cưới lưng ren khoét, chân váy tulle bồng nhẹ, hợp tiệc cưới ngoài trời.'],
+  ['Đầm lụa hai dây Noir', 'cat-vay', undefined, 'sup-2', 'Nữ', 'both', 1390000, 250000, 800000, ['S', 'M', 'L'], ['Đen'], 'Lụa satin', false, 'Đầm lụa hai dây cổ đổ, dáng suông dài, tối giản và sang trọng.'],
+  ['Hanbok Gyeongbok', 'cat-hoatrang', 'col-festival', 'sup-1', 'Nữ', 'rental', 0, 280000, 900000, ['S', 'M'], ['Xanh navy'], 'Lụa', false, 'Hanbok chima xanh navy phối áo trắng, kèm túi nhỏ, hợp chụp ảnh lễ hội Hàn Quốc.'],
+  ['Kimono Yukata Hoa', 'cat-hoatrang', 'col-festival', 'sup-1', 'Nữ', 'rental', 0, 300000, 1000000, ['M', 'L'], ['Xanh rêu hoa'], 'Cotton lụa', false, 'Kimono nền xanh rêu họa tiết hoa, kèm đai obi và trâm cài tóc.'],
+  ['Ví cầm tay vân cá sấu', 'cat-phukien', 'col-wedding', 'sup-1', 'Nữ', 'sale', 690000, 0, 0, ['Free size'], ['Hồng'], 'Da PU vân cá sấu', false, 'Clutch hồng vân cá sấu, nắp gập, phối đẹp với đầm trắng và pastel.'],
+  ['Nơ đeo cổ nhung', 'cat-phukien', undefined, 'sup-3', 'Nam', 'sale', 190000, 0, 0, ['Free size'], ['Xanh rêu'], 'Nhung', false, 'Nơ nhung thắt sẵn, dây điều chỉnh, đi cùng tuxedo hoặc vest tối màu.'],
 ]
+
+/** Ảnh chụp thật từ Unsplash (giấy phép miễn phí, xem docs/IMAGE_SOURCES.md), theo thứ tự sản phẩm trong catalog. */
+const PHOTOS: string[][] = [
+  ['1787588647846-16c054fa2bdc', '1787588647731-e47792a468e8'], // p-1
+  ['1793345242627-6b831e2a763c'], // p-2
+  ['1768809248422-b5a82fef6b15', '1617113930975-f9c7243ae527'], // p-3
+  ['1617137968427-85924c800a22', '1617137984095-74e4e5e3613f'], // p-4
+  ['1768767112566-dc12dbe40aae', '1763959952596-1512ebea8eb1'], // p-5
+  ['1793363953729-fc79753f8bf2'], // p-6
+  ['1767977005045-94eb8d80b833', '1761500996989-30752a7f35ed'], // p-7
+  ['1712669085636-7ceb31b23924', '1608451994760-ea44a25e80a0'], // p-8
+  ['1749294435693-4f39ec7e0ab2', '1749294435697-386a322bab8d'], // p-9
+  ['1782789086467-06ccb25a8509', '1589756823695-278bc923f962'], // p-10
+  ['1583039949165-96ee24b0d8de', '1765229279946-f265fa703385'], // p-11
+  ['1779763320789-95c30a3c0943', '1779763320462-a60f48e56b03'], // p-12
+  ['1539025828301-b314ca222fa9', '1786467470383-cfc7d19f7644'], // p-13
+  ['1772404245903-d374e4aa0312', '1766104800514-409da295c71b'], // p-14
+  ['1774537211395-0377d957cfbc'], // p-15
+  ['1788456696341-a6d6b35f12ff', '1631233999975-3d559f0526e1'], // p-16
+  ['1793345242589-05614e52f39a', '1793345243005-c90bd84dd471'], // p-17
+  ['1787588647858-1f8cac07462f', '1787588647874-5dbae7f38d80'], // p-18
+  ['1777646109007-b6b54da7719b'], // p-19
+  ['1785656572930-7e900dd76065'], // p-20
+  ['1793345242426-d496a6bb8ff3'], // p-21
+  ['1777606310856-5f1fe3113dfb', '1784822041270-7cc959c33cbb'], // p-22
+  ['1765229279773-b10038a84425', '1774460699436-c408cc1408c3'], // p-23
+  ['1789972181238-624c83e47cd4', '1789423476802-ec050cb926de'], // p-24
+  ['1765229277457-dd2f9f259f17', '1765229277389-3a4a0de325c2'], // p-25
+  ['1765871421513-452fe03d15cc', '1765871422489-a244dbc9c3d1'], // p-26
+  ['1759349394750-f85f5c3fc4b2', '1779406273746-8aef6abde6de'], // p-27
+  ['1480429370139-e0132c086e2a'], // p-28
+  ['1622497170185-5d668f816a56'], // p-29
+  ['1611937663641-5cef5189d71b'], // p-30
+  ['1793345242175-bb41700abc5e', '1793345243093-b7b30c9473d1'], // p-31
+  ['1793345242547-9a953a6ae2d9'], // p-32
+  ['1603796846900-d61a14c890ef', '1777353131725-02975738e03c'], // p-33
+  ['1765870974280-ca1fc4642bd7', '1704775991534-563c1d548f88'], // p-34
+  ['1785656572916-55e501e58574'], // p-35
+  ['1603418784678-7ecd0709f216'], // p-36
+  ['1789110854562-6bff8f621b3b'], // p-37
+  ['1697335638994-f5f4599f93c6'], // p-38
+]
+const photoUrl = (id: string) => `https://images.unsplash.com/photo-${id}?w=900&h=1125&fit=crop&crop=entropy&auto=format&q=80`
 
 const plain = (password: string) => hashPassword(password)
 
@@ -131,14 +191,14 @@ function buildProducts() {
     const id = `p-${index + 1}`
     products.push({
       id, name, categoryId, collectionId, supplierId, gender, mode, salePrice, rentalPricePerDay: rentalPrice, deposit,
-      material, featured, description, images: [], status: 'active', createdAt: daysAgo(100 - index),
+      material, featured, description, images: (PHOTOS[index] ?? []).map(photoUrl), status: 'active', createdAt: daysAgo(100 - index),
     })
     colors.forEach((color, ci) =>
       sizes.forEach((size, si) => {
         variants.push({
           id: `v-${index + 1}-${ci}-${si}`,
           productId: id,
-          sku: `PD${String(index + 1).padStart(3, '0')}-${normalize(color).slice(0, 2).toUpperCase()}${ci}-${size.replace(' ', '').toUpperCase()}`,
+          sku: `PD${String(index + 1).padStart(3, '0')}-${normalize(color).slice(0, 2).toUpperCase()}${ci}-${normalize(size).replace(/[^a-z0-9]/g, '').toUpperCase()}`,
           size,
           color,
           stock: mode === 'sale' ? 4 + ((index + si) % 5) : 3 + ((index + si) % 3),

@@ -216,7 +216,8 @@ export function placeOrders(input: PlaceOrderInput): Order[] {
         }
 
       // Thanh toán trực tuyến (giả lập cổng) hoặc tại quầy được ghi nhận ngay.
-      if (input.paymentMethod !== 'cod') collectOrderPayments(db, order, input.createdBy)
+      // VNPay được ghi khi cổng báo thanh toán thành công (Edge Function vnpay).
+      if (input.paymentMethod !== 'cod' && input.paymentMethod !== 'vnpay') collectOrderPayments(db, order, input.createdBy)
 
       if (input.channel === 'store') {
         order.timeline.push({ status: 'confirmed', at: now, by: input.createdBy })
@@ -254,6 +255,10 @@ export const isOverdue = (o: Order) => o.type === 'rental' && o.status === 'rent
 export const displayStatus = (o: Order) => (isOverdue(o) ? STATUS_LABEL.overdue : STATUS_LABEL[o.status])
 
 export const paidAmount = (db: Database, orderId: Id) => db.payments.filter((p) => p.orderId === orderId).reduce((s, p) => s + p.amount, 0)
+
+/** Đơn chọn VNPay nhưng khách chưa thanh toán xong. */
+export const awaitingOnlinePayment = (db: Database, o: Order) =>
+  o.paymentMethod === 'vnpay' && o.status !== 'cancelled' && !db.payments.some((p) => p.orderId === o.id && (p.type === 'sale' || p.type === 'rental'))
 
 export function lateFeeFor(db: Database, order: Order, returnDate = today()) {
   if (!order.rental) return { days: 0, fee: 0 }
@@ -332,6 +337,8 @@ export function advanceOrder(userId: Id, orderId: Id, next: OrderStatus, options
       log(db, userId, 'Hủy đơn', order.code)
       return
     }
+
+    if (next === 'confirmed' && awaitingOnlinePayment(db, order)) fail('Khách chưa thanh toán đơn này qua VNPay.')
 
     if (next === 'shipping') {
       order.carrier = options.carrier?.trim() || undefined

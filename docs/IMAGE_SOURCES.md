@@ -1,8 +1,8 @@
 # Nguồn ảnh sản phẩm
 
-Ảnh sản phẩm trên Supabase Storage (bucket `product-images`, thư mục `catalog/`) lấy từ [Unsplash](https://unsplash.com), chỉ chọn ảnh miễn phí (không lấy Unsplash+). Theo [Giấy phép Unsplash](https://unsplash.com/license), ảnh được dùng miễn phí cho mục đích cá nhân và thương mại, không bắt buộc ghi nguồn; không được bán lại ảnh gốc hoặc dùng để dựng một dịch vụ ảnh tương tự.
+Ảnh sản phẩm lấy từ [Unsplash](https://unsplash.com) và được hiển thị trực tiếp từ CDN `images.unsplash.com` (khai báo trong `PHOTOS` ở `src/data/seed.ts`), chỉ chọn ảnh miễn phí (không lấy Unsplash+). Theo [Giấy phép Unsplash](https://unsplash.com/license), ảnh được dùng miễn phí cho mục đích cá nhân và thương mại, không bắt buộc ghi nguồn; không được bán lại ảnh gốc hoặc dùng để dựng một dịch vụ ảnh tương tự.
 
-Ảnh đã được cắt khổ 4:5, rộng 900px. Tên sản phẩm, giá, mô tả do nhóm tự soạn, không lấy từ cửa hàng nào.
+Ảnh được cắt khổ 4:5, rộng 900px qua tham số URL (`w=900&h=1125&fit=crop`). Tên sản phẩm, giá, mô tả do nhóm tự soạn, không lấy từ cửa hàng nào.
 
 | Mã trong dữ liệu | Ảnh gốc |
 |---|---|
@@ -45,4 +45,4 @@
 | n-15 | [1](https://images.unsplash.com/photo-1789110854562-6bff8f621b3b) |
 | n-16 | [1](https://images.unsplash.com/photo-1697335638994-f5f4599f93c6) |
 
-Mã `p-*` là sản phẩm có sẵn trong dữ liệu mẫu (`p-1` … `p-22`); mã `n-*` là 16 sản phẩm thêm mới (mã SKU `PD023` … `PD038`).
+Mã `p-*` là sản phẩm có sẵn trong dữ liệu mẫu (`p-1` … `p-22`); mã `n-*` là 16 sản phẩm thêm mới, trong dữ liệu là `p-23` … `p-38` (mã SKU `PD023` … `PD038`).

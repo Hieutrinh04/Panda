@@ -4,7 +4,7 @@
 // - Chế độ Supabase: tải dữ liệu từ Supabase, mỗi lần mutate() thì ghi các
 //   dòng thay đổi lên Supabase (xem remote.ts).
 import { useSyncExternalStore } from 'react'
-import type { Database } from '../types'
+import type { CfStats, Database } from '../types'
 import { createSeed, DB_VERSION, defaultSettings } from './seed'
 import { isRemote, supabase, friendlyError } from '../lib/supabase'
 import { loadRemote, pushChanges, type RemoteTag } from './remote'
@@ -81,12 +81,18 @@ export const useStatus = () => useSyncExternalStore(subscribe, () => status)
 export async function reloadRemote() {
   if (!supabase) return
   try {
-    const [tables, { data }] = await Promise.all([loadRemote(), supabase.auth.getSession()])
+    const [tables, { data }, stats] = await Promise.all([
+      loadRemote(),
+      supabase.auth.getSession(),
+      // Thống kê tổng hợp cho hệ gợi ý; chưa chạy supabase/ai.sql thì tự tính từ dữ liệu đang có.
+      supabase.rpc('recommendation_stats').then((r) => (r.error ? undefined : (r.data as CfStats)), () => undefined),
+    ])
     const authId = data.session?.user.id
     const profile = tables.users.find((u) => u.id === authId && u.isActive)
     db = {
       ...db,
       ...tables,
+      recoStats: stats,
       settings: tables.settings ?? defaultSettings,
       session: profile ? (profile.role === 'customer' ? { customerId: profile.id } : { adminId: profile.id }) : {},
     }

@@ -4,6 +4,9 @@ import { useDb } from '../../data/store'
 import { canRent, canSell, productImage } from '../../services/catalog'
 import { money } from '../../lib/format'
 import { ProductCard } from '../ProductCard'
+import { RecommendationSection } from '../Recommendations'
+import { useCustomer } from '../../services/auth'
+import { recentlyViewed, recommendForUser } from '../../services/recommend'
 
 export function Home() {
   const db = useDb()
@@ -12,6 +15,11 @@ export function Home() {
   const sale = featured.filter(canSell).slice(0, 4)
   const rental = active.filter(canRent).slice(0, 8)
   const heroImages = featured.slice(0, 2)
+  const customer = useCustomer()
+  // Khách đã đăng nhập hoặc đã xem sản phẩm: gợi ý cá nhân; khách mới: theo độ phổ biến.
+  const viewed = recentlyViewed()
+  const forYou = recommendForUser(db, customer?.id, { viewed, limit: 4 })
+  const personal = Boolean(customer || viewed.length)
 
   return (
     <>
@@ -50,6 +58,8 @@ export function Home() {
             })}
           </div>
         </section>
+
+        <RecommendationSection eyebrow={personal ? 'DÀNH RIÊNG CHO BẠN' : 'XU HƯỚNG'} title={personal ? 'Gợi ý cho bạn' : 'Đang được nhiều khách chọn'} items={forYou} />
 
         <section className="section">
           <div className="section-head">

@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Package, Printer, RotateCcw } from 'lucide-react'
+import { CreditCard, Package, Printer, RotateCcw } from 'lucide-react'
 import type { Order, RequestType } from '../../types'
 import { useDb } from '../../data/store'
 import { useCustomer } from '../../services/auth'
 import { productImage } from '../../services/catalog'
-import { addToCart, createRequest, displayStatus, isOverdue, lateFeeFor, paidAmount, requestEligibility } from '../../services/orders'
+import { addToCart, awaitingOnlinePayment, createRequest, displayStatus, isOverdue, lateFeeFor, paidAmount, requestEligibility } from '../../services/orders'
+import { startVnpayPayment } from '../../services/payments'
+import { errorMessage } from '../../services/core'
 import { reviewableItems } from '../../services/engagement'
 import { PAYMENT_METHOD_LABEL, PAYMENT_TYPE_LABEL, REQUEST_STATUS_LABEL, REQUEST_TYPE_LABEL, STATUS_LABEL } from '../../services/labels'
 import { date, dateTime, money } from '../../lib/format'
@@ -82,6 +84,16 @@ export function AccountOrderDetail() {
   const allowed = requestEligibility(db, order)
   const late = isOverdue(order) ? lateFeeFor(db, order) : undefined
   const toReview = reviewableItems(db, customer.id).filter((x) => x.order.id === order.id)
+  const unpaid = awaitingOnlinePayment(db, order)
+
+  // Thanh toán lại qua VNPay (lần trước khách hủy hoặc thanh toán lỗi).
+  const payNow = async () => {
+    try {
+      window.location.assign(await startVnpayPayment([order.id]))
+    } catch (error) {
+      toast(errorMessage(error), true)
+    }
+  }
 
   // Thêm lại các sản phẩm của đơn vào giỏ; món nào hết hàng thì báo riêng.
   const reorder = async () => {
@@ -109,6 +121,12 @@ export function AccountOrderDetail() {
         </div>
       </div>
       <section className="card card-pad"><Progress order={order} /></section>
+      {unpaid && (
+        <div className="form-error row-between">
+          <span>Đơn chưa được thanh toán. Cửa hàng sẽ xác nhận đơn sau khi bạn thanh toán {money(order.total)} qua VNPay.</span>
+          <button className="btn btn-sm btn-primary" onClick={() => void payNow()}><CreditCard /> Thanh toán qua VNPay</button>
+        </div>
+      )}
       {late && <div className="form-error">Đơn thuê đã quá hạn trả {late.days} ngày. Phí trễ tạm tính {money(late.fee)} sẽ được trừ vào tiền cọc. Vui lòng trả đồ sớm hoặc liên hệ {db.settings.hotline}.</div>}
 
       {order.rental && (
@@ -118,7 +136,7 @@ export function AccountOrderDetail() {
             <dt>Ngày nhận – trả</dt><dd>{date(order.rental.startDate)} → <strong>{date(order.rental.endDate)}</strong>{order.rental.extendedDays > 0 && <span className="muted"> (đã gia hạn {order.rental.extendedDays} ngày)</span>}</dd>
             <dt>Tiền cọc</dt><dd>{money(order.depositTotal)}</dd>
             <dt>Trạng thái cọc</dt>
-            <dd>{order.status === 'completed' ? <span className="success-text">Đã hoàn {money(order.rental.depositRefunded)}</span> : order.status === 'cancelled' ? 'Đã hủy' : order.rental.deliveredAt ? 'Cửa hàng đang giữ, hoàn khi trả đồ' : 'Thanh toán khi nhận đồ'}</dd>
+            <dd>{order.status === 'completed' ? <span className="success-text">Đã hoàn {money(order.rental.depositRefunded)}</span> : order.status === 'cancelled' ? 'Đã hủy' : order.rental.deliveredAt || payments.some((p) => p.type === 'deposit') ? 'Cửa hàng đang giữ, hoàn khi trả đồ' : 'Thanh toán khi nhận đồ'}</dd>
             {(order.rental.lateFee > 0 || order.rental.damageFee > 0) && <><dt>Phí phát sinh</dt><dd>Trễ hạn {money(order.rental.lateFee)} · bồi thường {money(order.rental.damageFee)}</dd></>}
             {order.rental.conditionIn && <><dt>Tình trạng khi trả</dt><dd>{order.rental.conditionIn}</dd></>}
           </dl>

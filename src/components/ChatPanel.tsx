@@ -74,6 +74,12 @@ export function ChatPanel({ context, greeting, suggestions, onAction, onNavigate
                 {m.reply.action && onAction && <button className="btn btn-sm btn-primary" onClick={() => onAction(m.reply.action!)}>{m.reply.action.label}</button>}
               </div>
             )}
+            {m.reply.sources && (
+              <details className="bubble-sources">
+                <summary>Nguồn tham khảo ({m.reply.sources.length})</summary>
+                <ul>{m.reply.sources.map((src) => <li key={src.title}>{src.kind === 'product' ? 'Sản phẩm' : 'Chính sách'}: {src.title} <span>· {Math.round(src.similarity * 100)}%</span></li>)}</ul>
+              </details>
+            )}
           </div>
         ))}
         {busy && <div className="bubble bot"><span className="typing"><i /><i /><i /></span></div>}

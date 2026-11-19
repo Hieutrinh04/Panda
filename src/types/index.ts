@@ -130,7 +130,7 @@ export interface RentalInfo {
   extendedDays: number
 }
 
-export type PaymentMethod = 'cod' | 'bank' | 'cash' | 'card'
+export type PaymentMethod = 'cod' | 'bank' | 'cash' | 'card' | 'vnpay'
 export type DeliveryMethod = 'delivery' | 'pickup'
 
 export interface Order {
@@ -301,6 +301,12 @@ export interface StoreSettings {
 
 export interface PasswordReset { email: string; code: string; expiresAt: ISODate }
 
+/**
+ * Thống kê tổng hợp cho lọc cộng tác (không chứa thông tin cá nhân):
+ * pairs: [sản phẩm a, sản phẩm b, tích vô hướng, số khách chung]; items: [sản phẩm, tổng bình phương trọng số, số khách].
+ */
+export interface CfStats { pairs: [Id, Id, number, number][]; items: [Id, number, number][] }
+
 export interface Database {
   version: number
   users: User[]
@@ -327,4 +333,6 @@ export interface Database {
   // Trang quản trị và trang khách hàng giữ phiên đăng nhập riêng.
   session: { adminId?: Id; customerId?: Id }
   loginAttempts: Record<string, { count: number; lockUntil: number; level: number }>
+  /** Chế độ Supabase: thống kê cộng tác lấy từ recommendation_stats() (khách chỉ đọc được đơn của mình). */
+  recoStats?: CfStats
 }

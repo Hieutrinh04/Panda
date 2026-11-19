@@ -27,6 +27,7 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   bank: 'Chuyển khoản ngân hàng',
   cash: 'Tiền mặt tại cửa hàng',
   card: 'Thẻ / ví điện tử',
+  vnpay: 'VNPay',
 }
 
 export const PAYMENT_TYPE_LABEL: Record<PaymentType, string> = {

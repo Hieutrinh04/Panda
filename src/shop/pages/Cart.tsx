@@ -6,6 +6,8 @@ import { productImage } from '../../services/catalog'
 import { cartLines, quote, removeCartItem, updateCartItem } from '../../services/orders'
 import { money, today } from '../../lib/format'
 import { Empty } from '../../components/ui'
+import { RecommendationSection } from '../Recommendations'
+import { recommendForCart } from '../../services/recommend'
 
 export function Cart() {
   const db = useDb()
@@ -13,6 +15,7 @@ export function Cart() {
   if (!customer) return <Navigate to="/dang-nhap" state={{ from: '/gio-hang' }} replace />
   const lines = cartLines(db, customer.id)
   const q = quote(db, { lines, deliveryMethod: 'delivery', customer })
+  const pairing = recommendForCart(db, [...new Set(lines.map((l) => l.product.id))], 4)
   const invalid = lines.some((l) => l.product.status !== 'active' || l.quantity > l.available || (l.mode === 'rental' && (!l.rentalStart || l.rentalStart < today())))
 
   return (
@@ -72,6 +75,7 @@ export function Cart() {
           </aside>
         </div>
       )}
+      <RecommendationSection eyebrow="PHỐI ĐỒ" title="Gợi ý mua kèm" items={pairing} />
     </div>
   )
 }

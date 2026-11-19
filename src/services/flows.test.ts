@@ -5,7 +5,7 @@ import { addDays, today } from '../lib/format'
 import { login, registerCustomer } from './auth'
 import { createMovement, reviewMovement } from './inventory'
 import {
-  advanceOrder, createRequest, forwardRequest, paidAmount, placeOrders, resolveLine, resolveRequest, type CheckoutLine, type PlaceOrderInput,
+  advanceOrder, awaitingOnlinePayment, createRequest, forwardRequest, paidAmount, placeOrders, resolveLine, resolveRequest, type CheckoutLine, type PlaceOrderInput,
 } from './orders'
 import { reportSummary } from './reports'
 
@@ -50,6 +50,17 @@ describe('Đơn mua', () => {
     expect(order(o.id).status).toBe('completed')
     expect(paidAmount(getDb(), o.id)).toBe(o.total)
     expect(customer().points).toBe(points + Math.floor(o.subtotal / getDb().settings.pointsPerAmount))
+  })
+
+  it('VNPay: chưa ghi khoản thu khi đặt, chặn xác nhận khi khách chưa thanh toán', () => {
+    const [o] = place([line(SALE_VARIANT, 'sale')], { paymentMethod: 'vnpay' })
+    expect(paidAmount(getDb(), o.id)).toBe(0)
+    expect(awaitingOnlinePayment(getDb(), order(o.id))).toBe(true)
+    expect(() => advanceOrder(STAFF, o.id, 'confirmed')).toThrow(/chưa thanh toán/)
+    // Khách không thanh toán: cửa hàng hủy đơn, không phát sinh hoàn tiền.
+    advanceOrder(MANAGER, o.id, 'cancelled', { note: 'Quá hạn thanh toán' })
+    expect(payments(o.id)).toHaveLength(0)
+    expect(awaitingOnlinePayment(getDb(), order(o.id))).toBe(false)
   })
 
   it('Chuyển khoản rồi hủy: hoàn kho và hoàn đủ tiền', () => {

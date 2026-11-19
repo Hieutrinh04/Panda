@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { ExternalLink, LogOut, Menu, ShieldAlert } from 'lucide-react'
-import { useDb } from '../data/store'
+import { isRemote, useDb, useStatus } from '../data/store'
+import { syncKnowledgeBase } from '../services/knowledge'
 import { logout, useAdminUser } from '../services/auth'
 import { ROLE_LABEL } from '../services/labels'
 import { inventorySummary } from '../services/reports'
@@ -15,6 +16,21 @@ export function AdminLayout() {
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const db = useDb()
+
+  const ready = useStatus().ready && db.products.length > 0
+  // Mỗi phiên quản trị đồng bộ kho tri thức RAG một lần (chỉ nhúng lại tài liệu đã thay đổi).
+  useEffect(() => {
+    if (!isRemote || !user || !ready) return
+    try {
+      if (sessionStorage.getItem('panda-kb-synced')) return
+      sessionStorage.setItem('panda-kb-synced', '1')
+    } catch {
+      // sessionStorage bị chặn: vẫn đồng bộ.
+    }
+    syncKnowledgeBase(db).catch((error) => console.warn('Chưa cập nhật được kho tri thức AI:', error))
+    // Chỉ chạy khi dữ liệu vừa sẵn sàng; db thay đổi sau đó không cần đồng bộ lại ngay.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, user?.id])
 
   if (!user) return <Navigate to="/admin/dang-nhap" replace state={{ from: location.pathname }} />
 

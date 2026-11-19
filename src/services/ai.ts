@@ -11,6 +11,7 @@ import { displayStatus, isOverdue, lateFeeFor } from './orders'
 import { inventorySummary, reportSummary } from './reports'
 import { tierOf, totalSpent } from './promotions'
 import type { ProductInput } from './catalog'
+import { recentlyViewed, recommendForUser } from './recommend'
 
 export interface ProductDraft extends Partial<ProductInput> { name: string }
 
@@ -24,6 +25,8 @@ export interface AiReply {
   table?: { headers: string[]; rows: string[][] }
   links?: { label: string; to: string }[]
   action?: AiAction
+  /** Tài liệu RAG đã dùng để trả lời (hiển thị "Nguồn tham khảo"). */
+  sources?: { title: string; kind: 'product' | 'policy'; similarity: number }[]
 }
 
 export interface AiContext { scope: 'shop' | 'admin'; user?: User; cartProductIds?: Id[] }
@@ -199,12 +202,11 @@ function answerShop(db: Database, question: string, ctx: AiContext): AiReply {
   if (!results.length && query.words.length) results = searchProducts(db, { ...query, words: [] })
   if (results.length) return { text: `Mình tìm được ${results.length} mẫu${filters ? ` ${filters}` : ''}. Đây là những gợi ý phù hợp nhất:`, products: results.slice(0, 4) }
 
-  // Không khớp: gợi ý theo giỏ hàng / lịch sử mua thuê.
-  const history = new Set([...(ctx.cartProductIds ?? []), ...db.orders.filter((o) => o.customerId === ctx.user?.id).flatMap((o) => o.items.map((i) => i.productId))])
-  const cats = new Set(db.products.filter((p) => history.has(p.id)).map((p) => p.categoryId))
-  const similar = db.products.filter((p) => p.status === 'active' && cats.has(p.categoryId) && !history.has(p.id)).slice(0, 4)
-  if (similar.length) return { text: `Mình chưa tìm thấy mẫu đúng yêu cầu${filters ? ` (${filters})` : ''}. Dựa trên những món bạn quan tâm, bạn có thể thích:`, products: similar }
-  return { text: 'Mình chưa tìm được mẫu phù hợp. Bạn thử nói rõ hơn: dịp mặc (cưới, tiệc, Tết…), nam hay nữ, ngân sách, màu sắc hoặc muốn mua hay thuê nhé.', products: db.products.filter((p) => p.featured && p.status === 'active').slice(0, 4) }
+  // Không khớp: dùng hệ gợi ý (lịch sử mua/thuê, yêu thích, giỏ hàng, sản phẩm đã xem).
+  const personal = recommendForUser(db, ctx.user?.id, { viewed: [...(ctx.cartProductIds ?? []), ...recentlyViewed()], limit: 4 })
+  if (ctx.user || ctx.cartProductIds?.length || recentlyViewed().length)
+    return { text: `Mình chưa tìm thấy mẫu đúng yêu cầu${filters ? ` (${filters})` : ''}. Dựa trên những món bạn quan tâm, bạn có thể thích:`, products: personal.map((r) => r.product) }
+  return { text: 'Mình chưa tìm được mẫu phù hợp. Bạn thử nói rõ hơn: dịp mặc (cưới, tiệc, Tết…), nam hay nữ, ngân sách, màu sắc hoặc muốn mua hay thuê nhé. Đây là những mẫu đang được nhiều khách chọn:', products: personal.map((r) => r.product) }
 }
 
 // ---------- Trả lời cho quản lý / nhân viên ----------
@@ -359,7 +361,7 @@ function answerAdmin(db: Database, question: string, ctx: AiContext): AiReply {
   }
 }
 
-// ---------- Gọi mô hình ngôn ngữ (Claude qua Edge Function) ----------
+// ---------- Gọi mô hình ngôn ngữ (Google Gemini qua Edge Function) ----------
 
 /**
  * Dữ liệu gửi kèm câu hỏi: chỉ gồm những gì người dùng hiện tại đã được phép xem
@@ -367,18 +369,9 @@ function answerAdmin(db: Database, question: string, ctx: AiContext): AiReply {
  */
 function buildContext(db: Database, ctx: AiContext) {
   const t = today()
-  const products = db.products
-    .filter((p) => p.status === 'active' || ctx.scope === 'admin')
-    .map((p) => {
-      const variants = productVariants(db, p.id)
-      return {
-        id: p.id, name: p.name, category: categoryName(db, p.categoryId), collection: db.collections.find((c) => c.id === p.collectionId)?.name,
-        gender: p.gender, mode: p.mode, salePrice: p.mode !== 'rental' ? p.salePrice : undefined,
-        rentalPerDay: p.mode !== 'sale' ? p.rentalPricePerDay : undefined, deposit: p.mode !== 'sale' ? p.deposit : undefined,
-        colors: [...new Set(variants.map((v) => v.color))], sizes: [...new Set(variants.map((v) => v.size))], stock: totalStock(db, p.id),
-        rating: productRating(db, p.id).avg || undefined, description: p.description, material: p.material, status: ctx.scope === 'admin' ? p.status : undefined,
-      }
-    })
+  // Thông tin sản phẩm và chính sách do RAG truy xuất trên máy chủ (bảng kb_documents);
+  // ở đây chỉ gửi dữ liệu riêng của người hỏi và kết quả của hệ gợi ý.
+  const brief = (p: Product) => ({ id: p.id, name: p.name, category: categoryName(db, p.categoryId), salePrice: canSell(p) ? p.salePrice : undefined, rentalPerDay: canRent(p) ? p.rentalPricePerDay : undefined })
   const s = db.settings
   const policies = {
     store: { name: s.storeName, address: s.address, hotline: s.hotline, openHours: s.openHours },
@@ -393,7 +386,9 @@ function buildContext(db: Database, ctx: AiContext) {
 
   if (ctx.scope === 'shop') {
     const mine = ctx.user ? db.orders.filter((o) => o.customerId === ctx.user!.id).slice(0, 10).map(orderSummary) : []
-    return { today: t, customer: ctx.user ? { name: ctx.user.fullName, points: ctx.user.points } : null, cartProductIds: ctx.cartProductIds ?? [], products, policies, myOrders: mine }
+    const recommendations = recommendForUser(db, ctx.user?.id, { viewed: recentlyViewed(), limit: 6 }).map((r) => ({ ...brief(r.product), reason: r.reason }))
+    const cart = (ctx.cartProductIds ?? []).map((id) => db.products.find((p) => p.id === id)).filter((p): p is Product => Boolean(p)).map(brief)
+    return { today: t, customer: ctx.user ? { name: ctx.user.fullName, points: ctx.user.points } : null, cart, personalRecommendations: recommendations, myOrders: mine, coupons: policies.coupons }
   }
 
   const manager = ctx.user?.role === 'manager'
@@ -405,7 +400,8 @@ function buildContext(db: Database, ctx: AiContext) {
       }))
     : undefined
   return {
-    today: t, role: ctx.user?.role, products, policies, revenue,
+    today: t, role: ctx.user?.role, policies, revenue,
+    stock: db.products.map((p) => ({ id: p.id, name: p.name, status: p.status, stock: totalStock(db, p.id) })),
     lowStock: inventorySummary(db).low.slice(0, 20).map(({ product, variant }) => ({ product: product.name, sku: variant.sku, size: variant.size, color: variant.color, stock: variant.stock })),
     overdueRentals: db.orders.filter(isOverdue).map((o) => ({ ...orderSummary(o), lateFee: lateFeeFor(db, o).fee })),
     recentOrders: db.orders.slice(0, 60).map(orderSummary),
@@ -414,7 +410,7 @@ function buildContext(db: Database, ctx: AiContext) {
   }
 }
 
-interface RemoteReply { text: string; productIds: string[]; links: { label: string; to: string }[]; table: { headers: string[]; rows: string[][] } | null }
+interface RemoteReply { text: string; productIds: string[]; links: { label: string; to: string }[]; table: { headers: string[]; rows: string[][] } | null; sources?: AiReply['sources'] }
 
 async function askModel(question: string, ctx: AiContext, history: AiHistory): Promise<AiReply> {
   const db = getDb()
@@ -428,6 +424,7 @@ async function askModel(question: string, ctx: AiContext, history: AiHistory): P
     products: products.length ? products : undefined,
     links: data.links?.length ? data.links.filter((l) => l.to.startsWith('/')) : undefined,
     table: data.table?.rows.length ? data.table : undefined,
+    sources: data.sources?.length ? data.sources : undefined,
   }
 }
 
